@@ -1,0 +1,54 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getEntry, getCollection } from "astro:content";
+
+const siteEntry = await getEntry("site", "site");
+if (!siteEntry) throw new Error("Missing site config");
+if (!siteEntry.data.eventEnded) {
+  return Astro.redirect("/");
+}
+
+const participants = await getCollection("participants");
+---
+
+<BaseLayout title="Participants">
+  <h2
+    class="riso-section-title"
+    data-text="The Artists"
+  >
+    The Artists
+  </h2>
+  <p class="riso-section-sub">{participants.length} registered participants</p>
+
+  <div class="riso-grid">
+    {participants.map((participant, i) => {
+      const { name, bio, image, website, twitter, instagram } = participant.data;
+      const twitterHandle = twitter?.replace(/^@/, "");
+      const instagramHandle = instagram?.replace(/^@/, "");
+
+      return (
+        <div class="riso-card">
+          <div class="riso-card-num">No.{String(i + 1).padStart(2, '0')}</div>
+          <div class="riso-card-img-wrap">
+            <img src={image} alt={name} referrerpolicy="no-referrer" class="riso-card-img" />
+          </div>
+          <div class="riso-card-body">
+            <div class="riso-card-name">{name}</div>
+            <div class="riso-card-bio">{bio}</div>
+            <div class="riso-card-links">
+              {website && (
+                <a href={website} target="_blank" rel="noopener noreferrer">Web</a>
+              )}
+              {twitterHandle && (
+                <a href={`https://twitter.com/${twitterHandle}`} target="_blank" rel="noopener noreferrer">Twitter</a>
+              )}
+              {instagramHandle && (
+                <a href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">Instagram</a>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</BaseLayout>

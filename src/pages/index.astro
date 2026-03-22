@@ -1,0 +1,52 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getEntry, render } from "astro:content";
+
+const siteEntry = await getEntry("site", "site");
+if (!siteEntry) throw new Error("Missing site config");
+const site = siteEntry.data;
+
+const homeEntry = await getEntry("home", "home");
+if (!homeEntry) throw new Error("Missing home config");
+const home = homeEntry.data;
+const { Content } = await render(homeEntry);
+
+const ctaLink = site.eventEnded ? "/participants" : home.ctaLink;
+const ctaText = site.eventEnded ? "View Participants" : home.ctaText;
+
+const formattedDate = site.eventDate.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+---
+
+<BaseLayout>
+  <section style="padding: 3rem 0;">
+    <h1
+      class="riso-headline"
+      data-text={home.headline}
+      style="font-size: clamp(3rem, 10vw, 7.5rem); line-height: 0.85; margin-bottom: 1.5rem;"
+    >
+      {home.headline}
+    </h1>
+    <p class="riso-sub">{home.subheadline}</p>
+    <p class="riso-meta">{formattedDate} &mdash; {site.location}</p>
+    <a href={ctaLink} class="riso-cta">{ctaText}</a>
+  </section>
+
+  <div class="ink-swatches">
+    <div class="ink-swatch"></div>
+    <div class="ink-swatch"></div>
+    <div class="ink-swatch"></div>
+    <div class="ink-swatch"></div>
+    <div class="ink-swatch"></div>
+  </div>
+
+  <div class="content-block">
+    <div class="content-body">
+      <Content />
+    </div>
+  </div>
+</BaseLayout>

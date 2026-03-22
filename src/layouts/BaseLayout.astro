@@ -1,0 +1,51 @@
+---
+import "../styles/global.css";
+import { getEntry } from "astro:content";
+
+interface Props {
+  title?: string;
+}
+
+const siteEntry = await getEntry("site", "site");
+if (!siteEntry) throw new Error("Missing site config");
+const site = siteEntry.data;
+const { title } = Astro.props;
+const pageTitle = title ? `${title} | ${site.eventName}` : site.eventName;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={site.description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,400;0,700;0,900;1,400&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <div class="page-container">
+      <nav class="site-nav">
+        <a href="/" class="site-nav-logo">{site.eventName}</a>
+        <ul class="site-nav-links">
+          <li><a href="/">Home</a></li>
+          {!site.eventEnded && (
+            <li><a href="/form">Sign Up</a></li>
+          )}
+          {site.eventEnded && (
+            <li><a href="/participants">Participants</a></li>
+          )}
+        </ul>
+      </nav>
+
+      <main>
+        <slot />
+      </main>
+
+      <footer class="site-footer">
+        {site.eventName} &middot; {site.location}
+      </footer>
+    </div>
+  </body>
+</html>

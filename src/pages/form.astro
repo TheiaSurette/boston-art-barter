@@ -1,0 +1,115 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getEntry } from "astro:content";
+
+const siteEntry = await getEntry("site", "site");
+if (!siteEntry) throw new Error("Missing site config");
+if (siteEntry.data.eventEnded) {
+  return Astro.redirect("/participants");
+}
+
+const formEntry = await getEntry("form", "form");
+if (!formEntry) throw new Error("Missing form config");
+const formData = formEntry.data;
+---
+
+<BaseLayout title={formData.title}>
+  <h2
+    class="riso-section-title"
+    data-text={formData.title}
+    style="margin-bottom: 0.6rem;"
+  >
+    {formData.title}
+  </h2>
+  <p class="riso-meta" style="margin-bottom: 2rem;">{formData.description}</p>
+
+  <form
+    id="signup-form"
+    method="POST"
+    action={formData.formAction}
+    enctype="multipart/form-data"
+    class="riso-form"
+  >
+    <div class="form-group">
+      <label for="name">Name <span class="form-required">*</span></label>
+      <input type="text" id="name" name="name" required />
+    </div>
+
+    <div class="form-group">
+      <label for="bio">Bio <span class="form-required">*</span></label>
+      <textarea id="bio" name="bio" rows="4" required></textarea>
+      <span class="form-hint">Tell us about yourself and your art.</span>
+    </div>
+
+    <div class="form-group">
+      <label for="image">Image <span class="form-required">*</span></label>
+      <input
+        type="file"
+        id="image"
+        name="image"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        required
+      />
+      <span class="form-hint">JPEG, PNG, WebP, or GIF. 4 MB max.</span>
+    </div>
+
+    <div class="form-group">
+      <label for="website">Website</label>
+      <input type="url" id="website" name="website" placeholder="https://" />
+    </div>
+
+    <div class="form-group">
+      <label for="twitter">Twitter</label>
+      <input type="text" id="twitter" name="twitter" placeholder="@handle" />
+    </div>
+
+    <div class="form-group">
+      <label for="instagram">Instagram</label>
+      <input type="text" id="instagram" name="instagram" placeholder="@handle" />
+    </div>
+
+    <div id="form-status" class="form-status" hidden></div>
+
+    <button type="submit" id="submit-btn" class="riso-cta">Submit</button>
+  </form>
+
+  <script>
+    const form = document.getElementById("signup-form") as HTMLFormElement;
+    const statusEl = document.getElementById("form-status") as HTMLDivElement;
+    const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.hidden = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting\u2026";
+
+      try {
+        const data = new FormData(form);
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: data,
+        });
+
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+          statusEl.textContent = "You\u2019re signed up! We\u2019ll see you at the event.";
+          statusEl.className = "form-status form-status--success";
+          statusEl.hidden = false;
+          form.reset();
+        } else {
+          throw new Error(json.error || "Something went wrong.");
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Something went wrong.";
+        statusEl.textContent = message;
+        statusEl.className = "form-status form-status--error";
+        statusEl.hidden = false;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit";
+      }
+    });
+  </script>
+</BaseLayout>
