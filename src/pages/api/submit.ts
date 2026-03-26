@@ -48,21 +48,25 @@ function getString(formData: FormData, key: string): string {
   return val.toString().trim();
 }
 
+function env(key: string): string {
+  return (process.env[key] ?? "").trim();
+}
+
 function isGoogleConfigured(): boolean {
   return !!(
-    import.meta.env.GOOGLE_CLIENT_ID &&
-    import.meta.env.GOOGLE_CLIENT_SECRET &&
-    import.meta.env.GOOGLE_REFRESH_TOKEN &&
-    import.meta.env.GOOGLE_DRIVE_FOLDER_ID &&
-    import.meta.env.GOOGLE_SHEET_ID
+    env("GOOGLE_CLIENT_ID") &&
+    env("GOOGLE_CLIENT_SECRET") &&
+    env("GOOGLE_REFRESH_TOKEN") &&
+    env("GOOGLE_DRIVE_FOLDER_ID") &&
+    env("GOOGLE_SHEET_ID")
   );
 }
 
 async function getGoogleAuth() {
   const google = await getGoogleApis();
-  const clientId = import.meta.env.GOOGLE_CLIENT_ID;
-  const clientSecret = import.meta.env.GOOGLE_CLIENT_SECRET;
-  const refreshToken = import.meta.env.GOOGLE_REFRESH_TOKEN;
+  const clientId = env("GOOGLE_CLIENT_ID");
+  const clientSecret = env("GOOGLE_CLIENT_SECRET");
+  const refreshToken = env("GOOGLE_REFRESH_TOKEN");
 
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error("Google OAuth2 credentials are not set");
@@ -236,8 +240,8 @@ async function handleGoogleSubmission(
   const drive = google.drive({ version: "v3", auth });
   const sheets = google.sheets({ version: "v4", auth });
 
-  const folderId = import.meta.env.GOOGLE_DRIVE_FOLDER_ID;
-  const sheetId = import.meta.env.GOOGLE_SHEET_ID;
+  const folderId = env("GOOGLE_DRIVE_FOLDER_ID");
+  const sheetId = env("GOOGLE_SHEET_ID");
 
   if (!folderId) throw new Error("GOOGLE_DRIVE_FOLDER_ID is not set");
   if (!sheetId) throw new Error("GOOGLE_SHEET_ID is not set");
