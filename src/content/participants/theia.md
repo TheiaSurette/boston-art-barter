@@ -1,8 +1,7 @@
 ---
-name: Theia
-bio: Mixed-media artist exploring the intersection of nature and urban life. Based in Somerville.
-image: PLACEHOLDER_DRIVE_ID
-website: https://janedoe.art
-twitter: janedoeart
-instagram: janedoeart
+name: Theia Surette
+bio: Absolute baddie making cool shit for ppl to look at with their eyeballs
+image: 1wCmQS69pGuyCJs_AAufcVOZCT3cyplmp
+website: https://tsurette.com
+instagram: evil.they
 ---

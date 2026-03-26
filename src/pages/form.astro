@@ -1,115 +1,249 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getEntry } from "astro:content";
+import { getSiteConfig, getFormConfig } from "../lib/content";
+import { ArrowLeft, ArrowRight, Plus, Save, Send } from "@lucide/astro";
+import { MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES } from "../lib/validation";
 
-const siteEntry = await getEntry("site", "site");
-if (!siteEntry) throw new Error("Missing site config");
-if (siteEntry.data.eventEnded) {
+const site = await getSiteConfig();
+if (site.eventEnded) {
   return Astro.redirect("/participants");
 }
 
-const formEntry = await getEntry("form", "form");
-if (!formEntry) throw new Error("Missing form config");
-const formData = formEntry.data;
+const formData = await getFormConfig();
+
+const thankYouHeadline = formData.thankYouHeadline ?? "Thank You!";
+const thankYouMessage = formData.thankYouMessage ?? "We look forward to seeing you at the event!";
 ---
 
 <BaseLayout title={formData.title}>
-  <h2
-    class="riso-section-title"
-    data-text={formData.title}
-    style="margin-bottom: 0.6rem;"
-  >
-    {formData.title}
-  </h2>
-  <p class="riso-meta" style="margin-bottom: 2rem;">{formData.description}</p>
+  <div class="paper-form-wrapper">
+    <div class="paper-clip"></div>
+    <div class="paper-form" id="paper-form" data-current-step="1">
+      <div class="star-stamp paper-star-1"></div>
+      <div class="star-stamp paper-star-2"></div>
+      <div class="star-stamp paper-star-3"></div>
+      <div class="star-stamp paper-star-4"></div>
+      <div class="star-stamp paper-star-5"></div>
 
-  <form
-    id="signup-form"
-    method="POST"
-    action={formData.formAction}
-    enctype="multipart/form-data"
-    class="riso-form"
-  >
-    <div class="form-group">
-      <label for="name">Name <span class="form-required">*</span></label>
-      <input type="text" id="name" name="name" required />
+      <div class="paper-header">
+        <h2 class="paper-title">{formData.title}</h2>
+        <p class="paper-subtitle">{formData.description}</p>
+        <div class="paper-divider"></div>
+      </div>
+
+      <!-- Step Progress -->
+      <div class="step-progress" id="step-progress">
+        <div class="step-progress-bar">
+          <div class="step-progress-fill" id="progress-fill" style="width: 25%"></div>
+        </div>
+        <span class="step-progress-label" id="progress-label">Step 1 of 3</span>
+      </div>
+
+      <form
+        id="signup-form"
+        method="POST"
+        action={formData.formAction}
+        enctype="multipart/form-data"
+        class="riso-form paper-body"
+        data-max-file-size={MAX_FILE_SIZE}
+        data-allowed-types={ALLOWED_IMAGE_TYPES.join(",")}
+      >
+        <!-- Hidden piece data store -->
+        <div id="pieces-store" hidden></div>
+        <input type="hidden" name="pieceCount" id="pieceCount" value="0" />
+
+        <!-- STEP 1: Personal Info -->
+        <div class="form-step active" data-step="1">
+          <fieldset class="paper-section">
+            <legend class="paper-section-label">Personal Information</legend>
+
+            <div class="form-group paper-field">
+              <label for="name">Full Name <span class="form-required">*</span></label>
+              <input type="text" id="name" name="name" required />
+            </div>
+
+            <div class="form-group paper-field">
+              <label for="email">Email <span class="form-required">*</span></label>
+              <input type="email" id="email" name="email" required />
+            </div>
+
+            <div class="form-group paper-field">
+              <label for="pronouns">Pronouns</label>
+              <input type="text" id="pronouns" name="pronouns" placeholder="e.g. she/her, they/them" />
+            </div>
+
+            <div class="form-group paper-field">
+              <label for="instagram">Instagram <span class="form-required">*</span></label>
+              <input type="text" id="instagram" name="instagram" placeholder="@handle" required />
+            </div>
+
+            <div class="form-group paper-field">
+              <label>Would you like to be invited to our artist group chat on Instagram?</label>
+              <div class="radio-group">
+                <div class="radio-option">
+                  <input type="radio" id="gc-yes" name="groupChat" value="yes" />
+                  <label for="gc-yes">Yes</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="gc-no" name="groupChat" value="no" checked />
+                  <label for="gc-no">No</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group paper-field">
+              <label for="website">Website <span class="paper-optional">(optional)</span></label>
+              <input type="url" id="website" name="website" placeholder="https://" />
+            </div>
+
+            <div class="form-group paper-field">
+              <label for="bio">Bio / Artist Statement <span class="paper-optional">(optional)</span></label>
+              <textarea id="bio" name="bio" rows="3"></textarea>
+              <span class="form-hint">Tell us about yourself and your art.</span>
+            </div>
+
+            <div class="form-group paper-field paper-field--file">
+              <label for="artistPhoto">Artist Photo <span class="paper-optional">(optional)</span></label>
+              <div class="paper-file-zone" id="artist-photo-zone">
+                <input
+                  type="file"
+                  id="artistPhoto"
+                  name="artistPhoto"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                />
+              </div>
+              <span class="form-hint">JPEG, PNG, WebP, or GIF. 4 MB max.</span>
+            </div>
+          </fieldset>
+
+          <div class="step-nav">
+            <button type="button" class="step-nav-next" data-next><span>Next</span> <ArrowRight size={16} /></button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Branch - Do you have pieces? -->
+        <div class="form-step" data-step="2">
+          <div class="branch-question">
+            <h3>Do you have specific pieces to trade?</h3>
+            <div class="radio-group">
+              <div class="radio-option">
+                <input type="radio" id="has-pieces-yes" name="hasPieces" value="yes" />
+                <label for="has-pieces-yes">Yes</label>
+              </div>
+              <div class="radio-option">
+                <input type="radio" id="has-pieces-no" name="hasPieces" value="no" checked />
+                <label for="has-pieces-no">No</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-nav">
+            <button type="button" class="step-nav-back" data-back><ArrowLeft size={16} /> <span>Back</span></button>
+            <button type="button" class="step-nav-next" data-next><span>Next</span> <ArrowRight size={16} /></button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Piece Editor -->
+        <div class="form-step" data-step="3">
+          <fieldset class="paper-section">
+            <legend class="paper-section-label">Piece Details</legend>
+            <div class="piece-badge" id="piece-badge">Piece #1</div>
+
+            <div class="form-group paper-field">
+              <label for="piece-title">Title <span class="form-required">*</span></label>
+              <input type="text" id="piece-title" />
+            </div>
+
+            <div class="form-group paper-field">
+              <label for="piece-medium">Medium & Dimensions <span class="form-required">*</span></label>
+              <input type="text" id="piece-medium" placeholder='e.g. "Oil on canvas, 24x36"' />
+            </div>
+
+            <div class="form-group paper-field">
+              <label>Type</label>
+              <div class="radio-group">
+                <div class="radio-option">
+                  <input type="radio" id="pt-print" name="pieceType" value="Print" />
+                  <label for="pt-print">Print</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="pt-original" name="pieceType" value="Original" />
+                  <label for="pt-original">Original</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="pt-na" name="pieceType" value="N/A" checked />
+                  <label for="pt-na">N/A</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group paper-field paper-field--file">
+              <label for="piece-image">Upload Image <span class="form-required">*</span></label>
+              <div class="paper-file-zone" id="piece-image-zone">
+                <input
+                  type="file"
+                  id="piece-image"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                />
+              </div>
+              <span class="form-hint" id="piece-image-hint">JPEG, PNG, WebP, or GIF. 4 MB max.</span>
+            </div>
+
+            <div class="form-group paper-field">
+              <label for="piece-trading-for">What would you trade for?</label>
+              <textarea id="piece-trading-for" rows="2" placeholder="Describe what you'd like in return"></textarea>
+            </div>
+          </fieldset>
+
+          <div class="step-nav">
+            <button type="button" class="step-nav-back" data-back><ArrowLeft size={16} /> <span>Back</span></button>
+            <button type="button" class="step-nav-next" data-next><Save size={16} /> <span>Save Piece</span></button>
+          </div>
+        </div>
+
+        <!-- STEP 4: Piece List -->
+        <div class="form-step" data-step="4">
+          <fieldset class="paper-section">
+            <legend class="paper-section-label">Your Pieces</legend>
+            <ul class="piece-list" id="piece-list-display"></ul>
+            <button type="button" class="piece-list-add" id="add-piece-btn"><Plus size={14} /> <span>Add Another Piece</span></button>
+          </fieldset>
+
+          <div class="step-nav">
+            <button type="button" class="step-nav-back" data-back><ArrowLeft size={16} /> <span>Back</span></button>
+            <button type="button" class="step-nav-next" data-next><span>Next</span> <ArrowRight size={16} /></button>
+          </div>
+        </div>
+
+        <!-- STEP 5: Review -->
+        <div class="form-step" data-step="5">
+          <div class="review-section">
+            <h3 class="review-section-title">Personal Information</h3>
+            <div id="review-personal"></div>
+          </div>
+          <div class="review-section" id="review-pieces-section" hidden>
+            <h3 class="review-section-title">Pieces</h3>
+            <div id="review-pieces"></div>
+          </div>
+
+          <div class="step-nav">
+            <button type="button" class="step-nav-back" data-back><ArrowLeft size={16} /> <span>Back</span></button>
+            <button type="button" class="step-nav-next" id="submit-btn" data-submit><Send size={16} /> <span>Submit</span></button>
+          </div>
+        </div>
+
+        <!-- Status message (for errors) -->
+        <div id="form-status" class="form-status" hidden></div>
+      </form>
+
+      <!-- Thank You Screen (outside form) -->
+      <div class="thank-you" id="thank-you">
+        <h2 class="thank-you-headline" data-text={thankYouHeadline}>{thankYouHeadline}</h2>
+        <p class="thank-you-message">{thankYouMessage}</p>
+      </div>
+
     </div>
+  </div>
 
-    <div class="form-group">
-      <label for="bio">Bio <span class="form-required">*</span></label>
-      <textarea id="bio" name="bio" rows="4" required></textarea>
-      <span class="form-hint">Tell us about yourself and your art.</span>
-    </div>
-
-    <div class="form-group">
-      <label for="image">Image <span class="form-required">*</span></label>
-      <input
-        type="file"
-        id="image"
-        name="image"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        required
-      />
-      <span class="form-hint">JPEG, PNG, WebP, or GIF. 4 MB max.</span>
-    </div>
-
-    <div class="form-group">
-      <label for="website">Website</label>
-      <input type="url" id="website" name="website" placeholder="https://" />
-    </div>
-
-    <div class="form-group">
-      <label for="twitter">Twitter</label>
-      <input type="text" id="twitter" name="twitter" placeholder="@handle" />
-    </div>
-
-    <div class="form-group">
-      <label for="instagram">Instagram</label>
-      <input type="text" id="instagram" name="instagram" placeholder="@handle" />
-    </div>
-
-    <div id="form-status" class="form-status" hidden></div>
-
-    <button type="submit" id="submit-btn" class="riso-cta">Submit</button>
-  </form>
-
-  <script>
-    const form = document.getElementById("signup-form") as HTMLFormElement;
-    const statusEl = document.getElementById("form-status") as HTMLDivElement;
-    const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      statusEl.hidden = true;
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting\u2026";
-
-      try {
-        const data = new FormData(form);
-        const res = await fetch(form.action, {
-          method: "POST",
-          body: data,
-        });
-
-        const json = await res.json();
-
-        if (res.ok && json.success) {
-          statusEl.textContent = "You\u2019re signed up! We\u2019ll see you at the event.";
-          statusEl.className = "form-status form-status--success";
-          statusEl.hidden = false;
-          form.reset();
-        } else {
-          throw new Error(json.error || "Something went wrong.");
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Something went wrong.";
-        statusEl.textContent = message;
-        statusEl.className = "form-status form-status--error";
-        statusEl.hidden = false;
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Submit";
-      }
-    });
-  </script>
+  <script src="../scripts/form.ts"></script>
 </BaseLayout>

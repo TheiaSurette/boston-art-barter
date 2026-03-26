@@ -1,14 +1,12 @@
 ---
 import "../styles/global.css";
-import { getEntry } from "astro:content";
+import { getSiteConfig } from "../lib/content";
 
 interface Props {
   title?: string;
 }
 
-const siteEntry = await getEntry("site", "site");
-if (!siteEntry) throw new Error("Missing site config");
-const site = siteEntry.data;
+const site = await getSiteConfig();
 const { title } = Astro.props;
 const pageTitle = title ? `${title} | ${site.eventName}` : site.eventName;
 ---
@@ -22,19 +20,21 @@ const pageTitle = title ? `${title} | ${site.eventName}` : site.eventName;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,400;0,700;0,900;1,400&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <title>{pageTitle}</title>
   </head>
   <body>
     <div class="page-container">
       <nav class="site-nav">
-        <a href="/" class="site-nav-logo">{site.eventName}</a>
+        <a href="/" class="site-nav-logo"><img src="/logo.svg" alt="" class="site-nav-logo-img" />{site.eventName}</a>
         <ul class="site-nav-links">
-          <li><a href="/">Home</a></li>
+          <li><a href="/">{site.navLabelHome}</a></li>
           {!site.eventEnded && (
-            <li><a href="/form">Sign Up</a></li>
+            <li><a href="/form">{site.navLabelForm}</a></li>
           )}
           {site.eventEnded && (
-            <li><a href="/participants">Participants</a></li>
+            <li><a href="/participants">{site.navLabelParticipants}</a></li>
           )}
         </ul>
       </nav>
@@ -44,7 +44,8 @@ const pageTitle = title ? `${title} | ${site.eventName}` : site.eventName;
       </main>
 
       <footer class="site-footer">
-        {site.eventName} &middot; {site.location}
+        <div>{site.eventName} <img src="/logo.svg" alt="" class="footer-star" /> {site.location}</div>
+        <div class="footer-credit">site by <a href="https://tsurette.com" target="_blank" rel="noopener noreferrer" class="footer-credit-link">Theia</a></div>
       </footer>
     </div>
   </body>

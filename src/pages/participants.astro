@@ -1,14 +1,22 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getEntry, getCollection } from "astro:content";
+import { Globe } from "@lucide/astro";
+import { getSiteConfig, getParticipants } from "../lib/content";
+import { driveImageUrl } from "../lib/drive";
+import { normalizeInstagram } from "../lib/utils";
 
-const siteEntry = await getEntry("site", "site");
-if (!siteEntry) throw new Error("Missing site config");
-if (!siteEntry.data.eventEnded) {
+const site = await getSiteConfig();
+if (!site.eventEnded) {
   return Astro.redirect("/");
 }
 
-const participants = await getCollection("participants");
+const allParticipants = await getParticipants();
+const participants = allParticipants.sort((a, b) => {
+  if (a.data.order != null && b.data.order != null) return a.data.order - b.data.order;
+  if (a.data.order != null) return -1;
+  if (b.data.order != null) return 1;
+  return a.data.name.localeCompare(b.data.name);
+});
 ---
 
 <BaseLayout title="Participants">
@@ -22,28 +30,30 @@ const participants = await getCollection("participants");
 
   <div class="riso-grid">
     {participants.map((participant, i) => {
-      const { name, bio, image, website, twitter, instagram } = participant.data;
-      const twitterHandle = twitter?.replace(/^@/, "");
-      const instagramHandle = instagram?.replace(/^@/, "");
+      const { name, bio, image, website, instagram } = participant.data;
+      const instagramHandle = instagram ? normalizeInstagram(instagram) : undefined;
 
       return (
         <div class="riso-card">
           <div class="riso-card-num">No.{String(i + 1).padStart(2, '0')}</div>
           <div class="riso-card-img-wrap">
-            <img src={image} alt={name} referrerpolicy="no-referrer" class="riso-card-img" />
+            <img src={driveImageUrl(image)} alt={name} referrerpolicy="no-referrer" class="riso-card-img" />
           </div>
           <div class="riso-card-body">
             <div class="riso-card-name">{name}</div>
             <div class="riso-card-bio">{bio}</div>
             <div class="riso-card-links">
               {website && (
-                <a href={website} target="_blank" rel="noopener noreferrer">Web</a>
-              )}
-              {twitterHandle && (
-                <a href={`https://twitter.com/${twitterHandle}`} target="_blank" rel="noopener noreferrer">Twitter</a>
+                <a href={website} target="_blank" rel="noopener noreferrer">
+                  <Globe size={14} aria-hidden="true" />
+                  Website
+                </a>
               )}
               {instagramHandle && (
-                <a href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">Instagram</a>
+                <a href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                  Instagram
+                </a>
               )}
             </div>
           </div>
