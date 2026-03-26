@@ -1,10 +1,15 @@
 import type { APIRoute } from "astro";
-import { google } from "googleapis";
 import { Readable } from "node:stream";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES } from "../../lib/validation";
 import { normalizeInstagram, safeName } from "../../lib/utils";
+
+// Lazy-load googleapis to avoid cold start failures in serverless
+async function getGoogleApis() {
+  const { google } = await import("googleapis");
+  return google;
+}
 
 export const prerender = false;
 
@@ -53,7 +58,8 @@ function isGoogleConfigured(): boolean {
   );
 }
 
-function getGoogleAuth(): InstanceType<typeof google.auth.OAuth2> {
+async function getGoogleAuth() {
+  const google = await getGoogleApis();
   const clientId = import.meta.env.GOOGLE_CLIENT_ID;
   const clientSecret = import.meta.env.GOOGLE_CLIENT_SECRET;
   const refreshToken = import.meta.env.GOOGLE_REFRESH_TOKEN;
@@ -64,7 +70,7 @@ function getGoogleAuth(): InstanceType<typeof google.auth.OAuth2> {
 
   const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
   oauth2.setCredentials({ refresh_token: refreshToken });
-  return oauth2;
+  return { auth: oauth2, google };
 }
 
 function validateImageFile(file: File): string | null {
@@ -226,7 +232,7 @@ async function handleGoogleSubmission(
   pieces: ParsedPiece[],
   safe: string,
 ): Promise<Response> {
-  const auth = getGoogleAuth();
+  const { auth, google } = await getGoogleAuth();
   const drive = google.drive({ version: "v3", auth });
   const sheets = google.sheets({ version: "v4", auth });
 
@@ -309,7 +315,7 @@ async function handleGoogleSubmission(
 }
 
 async function uploadFileToDrive(
-  drive: ReturnType<typeof google.drive>,
+  drive: ReturnType<Awaited<ReturnType<typeof getGoogleApis>>["drive"]>,
   file: File,
   safe: string,
   label: string,

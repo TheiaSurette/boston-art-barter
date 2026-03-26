@@ -609,6 +609,14 @@ async function submitForm(): Promise<void> {
       body: data,
     });
 
+    // Guard against non-JSON responses (e.g. Vercel error pages, 500s)
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error(
+        res.ok ? "Unexpected response from server." : `Server error (${res.status}). Please try again.`
+      );
+    }
+
     const json = await res.json();
 
     if (res.ok && json.success) {
