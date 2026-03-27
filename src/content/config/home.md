@@ -1,6 +1,6 @@
 ---
 headline: Boston Art Barter
-subheadline: Trade art for anything but money
+subheadline: Trade art for anything but money.
 ctaText: Sign Up to Participate
 ctaLink: /form
 ---
