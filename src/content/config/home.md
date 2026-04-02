@@ -9,6 +9,7 @@ Do you make art? Do you want to meet other people who make art? Would you even m
 
 # F.A.Q.
 do you have to be an artist? 
+
 no! anyone is welcome! you can trade services and skills or just come to hang out!
 
 is the form required? 
